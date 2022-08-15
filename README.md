@@ -5,7 +5,7 @@
 ## usage
 ```
 $ resize
-80x24 -> 120x60
+linux 80 x 24 -> 120 x 60
 ```
 
 ## limitation
