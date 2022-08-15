@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Reference documents
+# https://wiki.archlinux.org/title/working_with_the_serial_console
+# ... rsz() works in OpenWrt 3.x, but it does not work in Ubuntu 22.04.1
+
+# https://stackoverflow.com/questions/2575037/how-to-get-the-cursor-position-in-bash
+# ... `stty raw -echo min 0` enabled to read escape sequence from text terminal
+
+# https://www2.ccs.neu.edu/research/gpc/VonaUtils/vona/terminal/vtansi.htm
+# ... Explanation for vt100 (DEC) escape sequences
+
+# ESC 7 ... DECSC: DEC Save Cursor
+# ESC [ r ... Enable scroll screen
+# ESC [ x ; y H ... CUP: Cursor Position: locate cursor at (x, y)
+# ESC [ 6n ... DSR: Device Status Report: Reports thee cursor position by transmitting "ESC [ width; height R"
+# ESC 8 ... DECRC: DEC Restore Cursor
+
+resize() {
+  [ -t 0 ] || return 1
+
+  local oldStty=$(stty -g)
+  stty raw -echo min 0
+  echo -en '\e7\e[r\e[9999;9999H\e[6n\e8'
+
+  local IFS='[;' _escape geometry
+  read -sd R _escape geometry
+
+  stty $oldStty
+
+  local x=${geometry##*;}; local y=${geometry%%;*}
+  echo -n "$TERM $COLUMNS x $LINES"
+  if [ ${COLUMNS} -eq ${x} ] && [ ${LINES} -eq ${y} ]; then
+    echo
+  else
+    echo " -> ${x} x ${y}"
+    stty cols ${x} rows ${y}
+  fi
+}
+
+resize
